@@ -5,3 +5,9 @@ data_ingestion:
   source_URL: "https://github.com/rahul22106/End-to-End-Heart-Disease-Prediction-System/raw/refs/heads/main/Heart_Disease.zip"
   local_data_file: artifacts/data_ingestion/data.zip
   unzip_dir: artifacts/data_ingestion
+
+data_validation:
+  root_dir: artifacts/data_validation
+  unzip_data_dir: artifacts/data_ingestion/heart.csv
+  STATUS_FILE: artifacts/data_validation/status.txt  
+  
