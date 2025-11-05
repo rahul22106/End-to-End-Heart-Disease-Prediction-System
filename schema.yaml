@@ -10,6 +10,7 @@ COLUMNS:
       ExerciseAngina: object
       Oldpeak: float64
       ST_Slope: object
+      HeartDisease: int64
 
 TARGET_COLUMN:
-      HeartDisease: int64      
+      Name: HeartDisease   

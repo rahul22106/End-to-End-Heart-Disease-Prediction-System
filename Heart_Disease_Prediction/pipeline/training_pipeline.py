@@ -1,5 +1,6 @@
 from Heart_Disease_Prediction.config.configuration import ConfigurationManager
 from Heart_Disease_Prediction.components.stage_00_data_ingestion import DataIngestion
+from Heart_Disease_Prediction.components.stage_01_data_validation import DataValidationConfig,DataValidation
 from Heart_Disease_Prediction.logger.log import log
 
 STAGE_NAME = "Data Ingestion stage"
@@ -27,3 +28,26 @@ if __name__ == '__main__':
     except Exception as e:
         log.exception(e)
         raise e
+    
+STAGE_NAME = "Data Validation stage"
+
+class DataValidationTrainingPipeline:
+    def __init__(self):
+        pass
+
+    def main(self):
+        config = ConfigurationManager()
+        data_validation_config = config.get_data_validation_config()
+        data_validation = DataValidation(config=data_validation_config)
+        data_validation.validate_all_columns()
+
+
+if __name__ == '__main__':
+    try:
+        log.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
+        obj = DataValidationTrainingPipeline()
+        obj.main()
+        log.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+    except Exception as e:
+        log.exception(e)
+        raise e    
