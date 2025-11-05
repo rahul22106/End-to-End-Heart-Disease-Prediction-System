@@ -5,4 +5,7 @@ plotly
 setuptools
 Pyyaml
 Streamlit
+ensure
+python-box
+
 -e .

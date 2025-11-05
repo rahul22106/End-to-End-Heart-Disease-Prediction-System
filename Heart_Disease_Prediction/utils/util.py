@@ -1,54 +1,129 @@
-import yaml
 import os
-import sys
-from typing import Any, Dict
-from Heart_Disease_Prediction.exception.exception_handler import AppException
+from box.exceptions import BoxValueError
+import yaml
+from Heart_Disease_Prediction.logger.log import log
+import json
+import joblib
+from ensure import ensure_annotations
+from box import ConfigBox
+from pathlib import Path
+from typing import Any
 
-def read_yaml_file(file_path: str) -> Dict[str, Any]:
-    """
-    Reads a YAML file and returns the contents as a dictionary.
-    
+
+
+@ensure_annotations
+def read_yaml(path_to_yaml: Path) -> ConfigBox:
+    """reads yaml file and returns
+
     Args:
-        file_path (str): Path to the YAML file
-        
-    Returns:
-        dict: Parsed YAML content as dictionary
-        
+        path_to_yaml (str): path like input
+
     Raises:
-        AppException: If file not found, invalid YAML, or permission issues
+        ValueError: if yaml file is empty
+        e: empty file
+
+    Returns:
+        ConfigBox: ConfigBox type
     """
     try:
-        # Check if file exists
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"YAML file not found: {file_path}")
-        
-        # Check if it's a file (not directory)
-        if not os.path.isfile(file_path):
-            raise ValueError(f"Path is not a file: {file_path}")
-        
-        # Check file extension
-        if not file_path.lower().endswith(('.yaml', '.yml')):
-            raise ValueError(f"File is not a YAML file: {file_path}")
-        
-        # Check file size (avoid reading huge files accidentally)
-        file_size = os.path.getsize(file_path)
-        if file_size > 10 * 1024 * 1024:  # 10MB limit
-            raise ValueError(f"YAML file too large: {file_size} bytes")
-        
-        # Read and parse YAML file
-        with open(file_path, 'r', encoding='utf-8') as yaml_file:
-            yaml_content = yaml.safe_load(yaml_file)
-            
-            # Check if YAML content is valid
-            if yaml_content is None:
-                return {}  # Return empty dict for empty YAML files
-                
-            if not isinstance(yaml_content, dict):
-                raise ValueError(f"YAML file does not contain a dictionary: {file_path}")
-                
-            return yaml_content
-            
-    except yaml.YAMLError as e:
-        raise AppException(f"Invalid YAML syntax in {file_path}: {str(e)}", sys) from e
+        with open(path_to_yaml) as yaml_file:
+            content = yaml.safe_load(yaml_file)
+            log.info(f"yaml file: {path_to_yaml} loaded successfully")
+            return ConfigBox(content)
+    except BoxValueError:
+        raise ValueError("yaml file is empty")
     except Exception as e:
-        raise AppException(f"Error reading YAML file {file_path}: {str(e)}", sys) from e
+        raise e
+    
+
+
+@ensure_annotations
+def create_directories(path_to_directories: list, verbose=True):
+    """create list of directories
+
+    Args:
+        path_to_directories (list): list of path of directories
+        ignore_log (bool, optional): ignore if multiple dirs is to be created. Defaults to False.
+    """
+    for path in path_to_directories:
+        os.makedirs(path, exist_ok=True)
+        if verbose:
+            log.info(f"created directory at: {path}")
+
+
+@ensure_annotations
+def save_json(path: Path, data: dict):
+    """save json data
+
+    Args:
+        path (Path): path to json file
+        data (dict): data to be saved in json file
+    """
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
+
+    log.info(f"json file saved at: {path}")
+
+
+
+
+@ensure_annotations
+def load_json(path: Path) -> ConfigBox:
+    """load json files data
+
+    Args:
+        path (Path): path to json file
+
+    Returns:
+        ConfigBox: data as class attributes instead of dict
+    """
+    with open(path) as f:
+        content = json.load(f)
+
+    log.info(f"json file loaded succesfully from: {path}")
+    return ConfigBox(content)
+
+
+@ensure_annotations
+def save_bin(data: Any, path: Path):
+    """save binary file
+
+    Args:
+        data (Any): data to be saved as binary
+        path (Path): path to binary file
+    """
+    joblib.dump(value=data, filename=path)
+    log.info(f"binary file saved at: {path}")
+
+
+@ensure_annotations
+def load_bin(path: Path) -> Any:
+    """load binary data
+
+    Args:
+        path (Path): path to binary file
+
+    Returns:
+        Any: object stored in the file
+    """
+    data = joblib.load(path)
+    log.info(f"binary file loaded from: {path}")
+    return data
+
+
+
+@ensure_annotations
+def get_size(path: Path) -> str:
+    """get size in KB
+
+    Args:
+        path (Path): path of the file
+
+    Returns:
+        str: size in KB
+    """
+    size_in_kb = round(os.path.getsize(path)/1024)
+    return f"~ {size_in_kb} KB"
+
+
+
