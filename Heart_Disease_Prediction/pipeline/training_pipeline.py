@@ -1,6 +1,7 @@
 from Heart_Disease_Prediction.config.configuration import ConfigurationManager
 from Heart_Disease_Prediction.components.stage_00_data_ingestion import DataIngestion
-from Heart_Disease_Prediction.components.stage_01_data_validation import DataValidationConfig,DataValidation
+from Heart_Disease_Prediction.components.stage_01_data_validation import DataValidation
+from Heart_Disease_Prediction.components.stage_02_data_transformation import DataTransformation
 from Heart_Disease_Prediction.logger.log import log
 
 STAGE_NAME = "Data Ingestion stage"
@@ -50,4 +51,33 @@ if __name__ == '__main__':
         log.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
     except Exception as e:
         log.exception(e)
-        raise e    
+        raise e  
+
+STAGE_NAME = "Data Transformation"
+
+class DataTransformationTrainingPipeline:
+    def __init__(self):
+        pass 
+    
+    def main(self):
+        config = ConfigurationManager()
+        data_transformation_config = config.get_data_transformation_config()
+        data_transformation = DataTransformation(config=data_transformation_config)
+        
+        # ✅ FIX: Call transform_data() instead of save_transformed_data()
+        transformed_data, output_path = data_transformation.transform_data()
+        
+        if transformed_data is not None:
+            log.info(f"Data transformation completed successfully. Output: {output_path}")
+        else:
+            log.error("Data transformation failed!")
+
+if __name__ == '__main__':
+    try:
+        log.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
+        obj = DataTransformationTrainingPipeline()
+        obj.main()
+        log.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+    except Exception as e:
+        log.exception(e)
+        raise e
