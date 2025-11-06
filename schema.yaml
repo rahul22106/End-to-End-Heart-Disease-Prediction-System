@@ -13,4 +13,4 @@ COLUMNS:
       HeartDisease: int64
 
 TARGET_COLUMN:
-      Name: HeartDisease   
+      Name: HeartDisease    
