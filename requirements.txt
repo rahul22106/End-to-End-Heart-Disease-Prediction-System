@@ -7,5 +7,4 @@ Pyyaml
 Streamlit
 ensure
 python-box
-
 -e .

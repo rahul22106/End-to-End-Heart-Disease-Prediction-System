@@ -2,6 +2,7 @@ from Heart_Disease_Prediction.config.configuration import ConfigurationManager
 from Heart_Disease_Prediction.components.stage_00_data_ingestion import DataIngestion
 from Heart_Disease_Prediction.components.stage_01_data_validation import DataValidation
 from Heart_Disease_Prediction.components.stage_02_data_transformation import DataTransformation
+#from Heart_Disease_Prediction.components.stage_03_model_trainer import ModelTrainer
 from Heart_Disease_Prediction.logger.log import log
 
 STAGE_NAME = "Data Ingestion stage"
@@ -81,3 +82,4 @@ if __name__ == '__main__':
     except Exception as e:
         log.exception(e)
         raise e
+    

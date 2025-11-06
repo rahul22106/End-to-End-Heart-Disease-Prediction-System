@@ -16,10 +16,3 @@ data_transformation:
   data_path: artifacts/data_ingestion/heart.csv
   transformed_data_dir: artifacts/data_transformation/transformed_data
 
-model_trainer:
-  root_dir: artifacts/model_trainer
-  transformed_data_path: artifacts/data_transformation/transformed_data.csv
-  trained_data_dir: artifacts/model_trainer/train.csv
-  tested_data_dir: artifacts/model_trainer/test.csv
-  
-
