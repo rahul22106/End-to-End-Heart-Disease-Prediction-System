@@ -1,6 +1,6 @@
 from Heart_Disease_Prediction.constant import *
 from Heart_Disease_Prediction.utils.util import read_yaml, create_directories
-from Heart_Disease_Prediction.entity.config_entity import DataIngestionConfig,DataValidationConfig,DataTransformationConfig
+from Heart_Disease_Prediction.entity.config_entity import DataIngestionConfig,DataValidationConfig,DataTransformationConfig,ModelTrainerConfig
 from pathlib import Path
 
 class ConfigurationManager:
@@ -63,4 +63,18 @@ class ConfigurationManager:
         return data_transformation_config
    
 
-    
+    def get_model_trainer_config(self) -> ModelTrainerConfig:
+        config = self.config.model_trainer
+
+        # Create directories
+        create_directories([config.root_dir])
+
+        model_trainer_config = ModelTrainerConfig(
+            root_dir=Path(config.root_dir),
+            transformed_data_path=Path(config.transformed_data_path),
+            trained_data_dir=Path(config.trained_data_dir),
+            tested_data_dir=Path(config.tested_data_dir),
+            model_name=config.model_name
+        )
+
+        return model_trainer_config

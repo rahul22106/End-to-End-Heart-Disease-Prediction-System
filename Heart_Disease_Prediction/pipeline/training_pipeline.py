@@ -2,7 +2,7 @@ from Heart_Disease_Prediction.config.configuration import ConfigurationManager
 from Heart_Disease_Prediction.components.stage_00_data_ingestion import DataIngestion
 from Heart_Disease_Prediction.components.stage_01_data_validation import DataValidation
 from Heart_Disease_Prediction.components.stage_02_data_transformation import DataTransformation
-#from Heart_Disease_Prediction.components.stage_03_model_trainer import ModelTrainer
+from Heart_Disease_Prediction.components.stage_03_model_trainer import ModelTrainer
 from Heart_Disease_Prediction.logger.log import log
 
 STAGE_NAME = "Data Ingestion stage"
@@ -83,3 +83,22 @@ if __name__ == '__main__':
         log.exception(e)
         raise e
     
+class ModelTrainerTrainingPipeline:
+    def __init__(self):
+        pass
+    
+    def main(self):
+        config = ConfigurationManager()
+        model_trainer_config = config.get_model_trainer_config()
+        model_trainer = ModelTrainer(config=model_trainer_config)
+        model_trainer.train_model()
+
+if __name__ == '__main__':
+    try:
+        log.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
+        obj = ModelTrainerTrainingPipeline()
+        obj.main()
+        log.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+    except Exception as e:
+        log.exception(e)
+        raise e

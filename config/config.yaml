@@ -16,3 +16,9 @@ data_transformation:
   data_path: artifacts/data_ingestion/heart.csv
   transformed_data_dir: artifacts/data_transformation/transformed_data
 
+model_trainer:
+  root_dir: artifacts/model_trainer
+  transformed_data_path: artifacts/data_transformation  # Path to transformed data
+  trained_data_dir: artifacts/model_trainer/trained_model
+  tested_data_dir: artifacts/model_trainer/test_results
+  model_name: heart_disease_model.joblib

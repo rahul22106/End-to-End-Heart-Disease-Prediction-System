@@ -1,16 +1,76 @@
-COLUMNS:
-      Age: int64
-      Sex: object
-      ChestPainType: object
-      RestingBP: int64
-      Cholesterol: int64
-      FastingBS: int64
-      RestingECG: object
-      MaxHR: int64
-      ExerciseAngina: object
-      Oldpeak: float64
-      ST_Slope: object
-      HeartDisease: int64
+# schema.yaml - Based on transformed_data.csv structure
 
-TARGET_COLUMN:
-      Name: HeartDisease    
+COLUMNS:
+  Age: int64
+  Sex: int64                    # 0: Female, 1: Male (encoded)
+  ChestPainType: int64          # 0: Typical Angina, 1: Atypical Angina, 2: Non-anginal Pain, 3: Asymptomatic (encoded)
+  RestingBP: int64              # Resting Blood Pressure (mm Hg)
+  Cholesterol: int64            # Serum Cholesterol (mg/dl)
+  FastingBS: int64              # Fasting Blood Sugar: 1 if > 120 mg/dl, 0 otherwise
+  RestingECG: int64             # 0: Normal, 1: ST-T wave abnormality, 2: Left ventricular hypertrophy (encoded)
+  MaxHR: int64                  # Maximum Heart Rate achieved
+  ExerciseAngina: int64         # 0: No, 1: Yes (encoded)
+  Oldpeak: float64              # ST depression induced by exercise relative to rest
+  ST_Slope: int64               # 0: Upsloping, 1: Flat, 2: Downsloping (encoded)
+  HeartDisease: int64           # Target: 0: No Disease, 1: Heart Disease
+
+# Data validation rules for transformed data
+DATA_VALIDATION:
+  NUMERICAL_COLUMNS:
+    - Age
+    - RestingBP
+    - Cholesterol
+    - MaxHR
+    - Oldpeak
+  
+  CATEGORICAL_COLUMNS:
+    - Sex
+    - ChestPainType
+    - FastingBS
+    - RestingECG
+    - ExerciseAngina
+    - ST_Slope
+    - HeartDisease
+
+  # Value ranges for numerical columns (after transformation)
+  VALUE_RANGES:
+    Age:
+      min: 20
+      max: 100
+    RestingBP:
+      min: 80
+      max: 200
+    Cholesterol:
+      min: 0
+      max: 700
+    MaxHR:
+      min: 50
+      max: 220
+    Oldpeak:
+      min: -5.0
+      max: 10.0
+
+  # Allowed values for categorical columns (encoded values)
+  CATEGORICAL_VALUES:
+    Sex: [0, 1]
+    ChestPainType: [0, 1, 2, 3]
+    FastingBS: [0, 1]
+    RestingECG: [0, 1, 2]
+    ExerciseAngina: [0, 1]
+    ST_Slope: [0, 1, 2]
+    HeartDisease: [0, 1]
+
+# Required columns that must be present
+REQUIRED_COLUMNS:
+  - Age
+  - Sex
+  - ChestPainType
+  - RestingBP
+  - Cholesterol
+  - FastingBS
+  - RestingECG
+  - MaxHR
+  - ExerciseAngina
+  - Oldpeak
+  - ST_Slope
+  - HeartDisease
