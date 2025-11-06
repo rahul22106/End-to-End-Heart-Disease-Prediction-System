@@ -167,7 +167,7 @@ class ModelTrainer:
             report_path = self.config.tested_data_dir / "model_report.txt"
             with open(report_path, 'w') as f:
                 f.write("=== MODEL TRAINING RESULTS ===\n\n")
-                f.write(f"Best Parameters: {best_params}\n\n")
+                # f.write(f"Best Parameters: {best_params}\n\n")
                 f.write(f"Test Accuracy: {accuracy:.4f}\n\n")
                 f.write("Classification Report:\n")
                 f.write(class_report)
