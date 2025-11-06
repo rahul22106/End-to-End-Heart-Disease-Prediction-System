@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
 from pathlib import Path
@@ -92,46 +92,32 @@ class ModelTrainer:
             log.error(f"Error in loading and splitting data: {str(e)}")
             raise e
     
-    def train_random_forest(self, X_train, X_test, y_train, y_test):
-        """Train Random Forest with GridSearchCV"""
+    def load_best_params(self):
+        """Load best parameters from param.yaml"""
         try:
-            log.info("Starting Random Forest training with GridSearchCV...")
+            from Heart_Disease_Prediction.constant import PARAM_FILE_PATH
+            from Heart_Disease_Prediction.utils.util import read_yaml
             
-            # Initialize classifier
-            rfc = RandomForestClassifier(random_state=42)
-
-            # Define parameter grid
-            param_grid = {
-                'n_estimators': [100, 200, 300, 400, 500],
-                'max_depth': [10, 20, None],
-                'min_samples_split': [2, 5, 10],
-                'min_samples_leaf': [1, 2, 4],
-                'max_features': ['sqrt', 'log2']
-            }
-
-            # Create GridSearchCV
-            grid_search = GridSearchCV(
-                estimator=rfc,
-                param_grid=param_grid,
-                cv=5,                    # 5-fold cross-validation
-                scoring='accuracy',       # scoring metric
-                n_jobs=-1,               # use all processors
-                verbose=1                # show progress
-            )
-
-            # Fit the grid search
-            log.info("Starting GridSearchCV...")
-            grid_search.fit(X_train, y_train)
-
-            # Get best parameters
-            best_params = grid_search.best_params_
-            best_score = grid_search.best_score_
+            params = read_yaml(PARAM_FILE_PATH)
+            best_params = params['best_params']
             
-            log.info(f"GridSearchCV completed. Best CV score: {best_score:.4f}")
-            log.info(f"Best parameters: {best_params}")
-
-            # Create and train final model with best parameters
-            rfctree = RandomForestClassifier(**best_params, random_state=42, n_jobs=-1)
+            log.info(f"Loaded best parameters from param.yaml: {best_params}")
+            return best_params
+            
+        except Exception as e:
+            log.error(f"Error loading parameters from param.yaml: {str(e)}")
+            raise e
+    
+    def train_random_forest(self, X_train, X_test, y_train, y_test):
+        """Train Random Forest using best parameters from param.yaml"""
+        try:
+            log.info("Starting Random Forest training with parameters from param.yaml...")
+            
+            # Load best parameters from param.yaml
+            best_params = self.load_best_params()
+            
+            # Create and train model with best parameters
+            rfctree = RandomForestClassifier(**best_params)
             rfctree.fit(X_train, y_train)
 
             # Make predictions and evaluate
@@ -202,7 +188,7 @@ class ModelTrainer:
             # Step 1: Load and split data
             X_train, X_test, y_train, y_test = self.load_and_split_data()
             
-            # Step 2: Train Random Forest with GridSearch
+            # Step 2: Train Random Forest with parameters from param.yaml
             model, best_params, accuracy, class_report, cm = self.train_random_forest(
                 X_train, X_test, y_train, y_test
             )
