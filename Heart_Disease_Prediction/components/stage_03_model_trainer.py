@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
 from pathlib import Path
@@ -108,6 +108,52 @@ class ModelTrainer:
             log.error(f"Error loading parameters from param.yaml: {str(e)}")
             raise e
     
+    def cross_validate_model(self, X, y):
+        """Perform cross-validation to check model stability"""
+        try:
+            best_params = self.load_best_params()
+            model = RandomForestClassifier(**best_params)
+            
+            cv_scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
+            
+            log.info(f"Cross-Validation Scores: {cv_scores}")
+            log.info(f"CV Mean: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})")
+            
+            if cv_scores.std() > 0.05:
+                log.warning("High variance in CV scores - model may be unstable")
+            else:
+                log.info("CV scores show good stability")
+            
+            return cv_scores
+            
+        except Exception as e:
+            log.error(f"Error in cross-validation: {str(e)}")
+            raise e
+    
+    def analyze_feature_importance(self, model, feature_names):
+        """Analyze which features might be causing overfitting"""
+        try:
+            importances = model.feature_importances_
+            feature_imp = pd.DataFrame({
+                'feature': feature_names,
+                'importance': importances
+            }).sort_values('importance', ascending=False)
+            
+            log.info("Top 5 Most Important Features:")
+            for _, row in feature_imp.head().iterrows():
+                log.info(f"  {row['feature']}: {row['importance']:.4f}")
+            
+            # Check for dominant features
+            top_feature_importance = feature_imp['importance'].iloc[0]
+            if top_feature_importance > 0.3:
+                log.warning(f"Single feature dominating (importance: {top_feature_importance:.4f}) - consider regularization")
+            
+            return feature_imp
+            
+        except Exception as e:
+            log.error(f"Error in feature importance analysis: {str(e)}")
+            raise e
+    
     def train_random_forest(self, X_train, X_test, y_train, y_test):
         """Train Random Forest using best parameters from param.yaml"""
         try:
@@ -120,27 +166,55 @@ class ModelTrainer:
             rfctree = RandomForestClassifier(**best_params)
             rfctree.fit(X_train, y_train)
 
-            # Make predictions and evaluate
-            rfc_pred = rfctree.predict(X_test)
-            accuracy = accuracy_score(y_test, rfc_pred)
+            # Make predictions on both train and test sets
+            train_pred = rfctree.predict(X_train)
+            test_pred = rfctree.predict(X_test)
             
-            log.info(f"RandomForestClassifier's Accuracy: {accuracy:.4f}")
+            # Calculate accuracies for both sets
+            train_accuracy = accuracy_score(y_train, train_pred)
+            test_accuracy = accuracy_score(y_test, test_pred)
+            
+            accuracy_gap = train_accuracy - test_accuracy
+            
+            log.info(f"Training Accuracy: {train_accuracy:.4f}")
+            log.info(f"Test Accuracy: {test_accuracy:.4f}")
+            log.info(f"Accuracy Gap (Train - Test): {accuracy_gap:.4f}")
+            
+            # Overfitting detection (without emojis for file compatibility)
+            overfitting_status = ""
+            overfitting_log_status = ""
+            
+            if accuracy_gap > 0.10:
+                overfitting_status = "SIGNIFICANT OVERFITTING DETECTED"
+                overfitting_log_status = "🚨 SIGNIFICANT OVERFITTING DETECTED"
+                log.warning(overfitting_log_status)
+                log.warning("Training accuracy is much higher than test accuracy")
+            elif accuracy_gap > 0.05:
+                overfitting_status = "MODERATE OVERFITTING DETECTED"
+                overfitting_log_status = "⚠️ MODERATE OVERFITTING DETECTED"
+                log.warning(overfitting_log_status)
+                log.warning("Model may be memorizing training data")
+            else:
+                overfitting_status = "Good generalization - minimal overfitting"
+                overfitting_log_status = "✅ Good generalization - minimal overfitting"
+                log.info(overfitting_log_status)
             
             # Generate detailed classification report
-            class_report = classification_report(y_test, rfc_pred)
+            class_report = classification_report(y_test, test_pred)
             log.info(f"Classification Report:\n{class_report}")
             
             # Generate confusion matrix
-            cm = confusion_matrix(y_test, rfc_pred)
+            cm = confusion_matrix(y_test, test_pred)
             log.info(f"Confusion Matrix:\n{cm}")
             
-            return rfctree, best_params, accuracy, class_report, cm
+            return rfctree, best_params, test_accuracy, train_accuracy, class_report, cm, accuracy_gap, overfitting_status
             
         except Exception as e:
             log.error(f"Error in Random Forest training: {str(e)}")
             raise e
     
-    def save_model_and_results(self, model, best_params, accuracy, class_report, cm):
+    def save_model_and_results(self, model, best_params, test_accuracy, train_accuracy, 
+                             class_report, cm, accuracy_gap, overfitting_status, cv_scores, feature_imp):
         """Save the trained model and evaluation results"""
         try:
             # Save the trained model
@@ -154,32 +228,61 @@ class ModelTrainer:
             
             # Save evaluation results
             results = {
-                'accuracy': accuracy,
+                'test_accuracy': test_accuracy,
+                'train_accuracy': train_accuracy,
+                'accuracy_gap': accuracy_gap,
+                'overfitting_status': overfitting_status,
                 'classification_report': class_report,
                 'confusion_matrix': cm,
-                'best_params': best_params
+                'best_params': best_params,
+                'cv_scores': cv_scores,
+                'feature_importance': feature_imp.to_dict()
             }
             
             results_path = self.config.tested_data_dir / "evaluation_results.joblib"
             joblib.dump(results, results_path)
             
-            # Save a readable text report
+            # Save a comprehensive text report (without emojis for Windows compatibility)
             report_path = self.config.tested_data_dir / "model_report.txt"
-            with open(report_path, 'w') as f:
+            with open(report_path, 'w', encoding='utf-8') as f:
                 f.write("=== MODEL TRAINING RESULTS ===\n\n")
-                # f.write(f"Best Parameters: {best_params}\n\n")
-                f.write(f"Test Accuracy: {accuracy:.4f}\n\n")
-                f.write("Classification Report:\n")
+                f.write(f"Training Accuracy: {train_accuracy:.4f}\n")
+                f.write(f"Test Accuracy: {test_accuracy:.4f}\n")
+                f.write(f"Accuracy Gap: {accuracy_gap:.4f}\n")
+                f.write(f"Overfitting Status: {overfitting_status}\n\n")
+                
+                f.write("=== CROSS-VALIDATION RESULTS ===\n")
+                f.write(f"CV Scores: {list(cv_scores)}\n")
+                f.write(f"CV Mean: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})\n\n")
+                
+                f.write("=== TOP 5 FEATURE IMPORTANCES ===\n")
+                top_features = feature_imp.head()
+                for _, row in top_features.iterrows():
+                    f.write(f"{row['feature']}: {row['importance']:.4f}\n")
+                f.write("\n")
+                
+                f.write("=== CLASSIFICATION REPORT ===\n")
                 f.write(class_report)
-                f.write(f"\nConfusion Matrix:\n{cm}")
+                f.write(f"\n=== CONFUSION MATRIX ===\n")
+                f.write(f"{cm}\n")
             
             log.info(f"Results saved at: {results_path}")
-            log.info(f"Text report saved at: {report_path}")
+            log.info(f"Comprehensive text report saved at: {report_path}")
             
         except Exception as e:
             log.error(f"Error saving model and results: {str(e)}")
+            # Create a basic report even if detailed one fails
+            try:
+                basic_report_path = self.config.tested_data_dir / "basic_model_report.txt"
+                with open(basic_report_path, 'w', encoding='utf-8') as f:
+                    f.write(f"Training Accuracy: {train_accuracy:.4f}\n")
+                    f.write(f"Test Accuracy: {test_accuracy:.4f}\n")
+                    f.write(f"Accuracy Gap: {accuracy_gap:.4f}\n")
+                log.info(f"Basic report saved at: {basic_report_path}")
+            except:
+                log.error("Failed to save basic report")
             raise e
-    
+        
     def train_model(self):
         """Main method to execute the complete model training pipeline"""
         try:
@@ -188,15 +291,27 @@ class ModelTrainer:
             # Step 1: Load and split data
             X_train, X_test, y_train, y_test = self.load_and_split_data()
             
-            # Step 2: Train Random Forest with parameters from param.yaml
-            model, best_params, accuracy, class_report, cm = self.train_random_forest(
+            # Step 2: Cross-validation check
+            cv_scores = self.cross_validate_model(
+                pd.concat([X_train, X_test]), 
+                pd.concat([y_train, y_test])
+            )
+            
+            # Step 3: Train Random Forest
+            model, best_params, test_accuracy, train_accuracy, class_report, cm, accuracy_gap, overfitting_status = self.train_random_forest(
                 X_train, X_test, y_train, y_test
             )
             
-            # Step 3: Save model and results
-            self.save_model_and_results(model, best_params, accuracy, class_report, cm)
+            # Step 4: Feature importance analysis
+            feature_imp = self.analyze_feature_importance(model, X_train.columns)
             
-            log.info("✅ Model training pipeline completed successfully!")
+            # Step 5: Save model and results
+            self.save_model_and_results(
+                model, best_params, test_accuracy, train_accuracy, 
+                class_report, cm, accuracy_gap, overfitting_status, cv_scores, feature_imp
+            )
+            
+            log.info("Model training pipeline completed successfully!")
             
             return model
             

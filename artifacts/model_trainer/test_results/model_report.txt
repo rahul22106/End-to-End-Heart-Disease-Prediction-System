@@ -1,17 +1,31 @@
 === MODEL TRAINING RESULTS ===
 
-Test Accuracy: 0.8804
+Training Accuracy: 0.8815
+Test Accuracy: 0.8696
+Accuracy Gap: 0.0119
+Overfitting Status: Good generalization - minimal overfitting
 
-Classification Report:
+=== CROSS-VALIDATION RESULTS ===
+CV Scores: [np.float64(0.875), np.float64(0.8695652173913043), np.float64(0.8532608695652174), np.float64(0.8142076502732241), np.float64(0.8688524590163934)]
+CV Mean: 0.8562 (+/- 0.0444)
+
+=== TOP 5 FEATURE IMPORTANCES ===
+ST_Slope: 0.3617
+ChestPainType: 0.1474
+ExerciseAngina: 0.1252
+Oldpeak: 0.1028
+MaxHR: 0.0999
+
+=== CLASSIFICATION REPORT ===
               precision    recall  f1-score   support
 
-           0       0.87      0.87      0.87        82
-           1       0.89      0.89      0.89       102
+           0       0.85      0.85      0.85        82
+           1       0.88      0.88      0.88       102
 
-    accuracy                           0.88       184
-   macro avg       0.88      0.88      0.88       184
-weighted avg       0.88      0.88      0.88       184
+    accuracy                           0.87       184
+   macro avg       0.87      0.87      0.87       184
+weighted avg       0.87      0.87      0.87       184
 
-Confusion Matrix:
-[[71 11]
- [11 91]]
+=== CONFUSION MATRIX ===
+[[70 12]
+ [12 90]]
