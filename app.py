@@ -15,8 +15,9 @@ st.set_page_config(
 st.title("❤️ Heart Disease Predictor")
 st.markdown("---")
 
-# Check if model exists
+# Check if model and scaler exist
 model_path = 'artifacts/model_trainer/trained_model/heart_disease_model.joblib'
+scaler_path = 'artifacts/data_transformation/standard_scaler.joblib'
 
 if not os.path.exists(model_path):
     st.error("""
@@ -37,11 +38,12 @@ if not os.path.exists(model_path):
     
     # Create a placeholder for demonstration
     if st.button("Create Demo Model (for testing only)"):
-        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.preprocessing import StandardScaler
         import numpy as np
         
         # Create a simple demo model
-        demo_model = RandomForestClassifier(n_estimators=10, random_state=42)
+        demo_model = LogisticRegression(random_state=42)
         
         # Create dummy training data matching your feature structure
         X_dummy = np.random.rand(100, 11)
@@ -52,30 +54,40 @@ if not os.path.exists(model_path):
         # Create directory if it doesn't exist
         os.makedirs('artifacts/model_trainer/trained_model', exist_ok=True)
         joblib.dump(demo_model, model_path)
-        st.success("✅ Demo model created! You can now test the interface.")
+        
+        # Create demo scaler
+        demo_scaler = StandardScaler()
+        demo_scaler.fit(X_dummy)
+        os.makedirs('artifacts/data_transformation', exist_ok=True)
+        joblib.dump(demo_scaler, scaler_path)
+        
+        st.success("✅ Demo model and scaler created! You can now test the interface.")
         st.rerun()
     
     st.stop()
 
-# Load the trained model
+# Load the trained model and scaler
 @st.cache_resource
-def load_model():
+def load_model_and_scaler():
     try:
         model = joblib.load(model_path)
-        return model
+        scaler = joblib.load(scaler_path)
+        return model, scaler
     except Exception as e:
-        st.error(f"Error loading model: {str(e)}")
-        return None
+        st.error(f"Error loading model or scaler: {str(e)}")
+        return None, None
 
-model = load_model()
+model, scaler = load_model_and_scaler()
 
-if model is None:
+if model is None or scaler is None:
     st.stop()
 
 def predict_heart_disease(input_data):
-    """Make prediction using the trained model"""
+    """Make prediction using the trained model with scaling"""
     try:
-        prediction = model.predict(input_data)
+        # Scale the input data using the fitted StandardScaler
+        scaled_data = scaler.transform(input_data)
+        prediction = model.predict(scaled_data)
         return prediction[0]
     except Exception as e:
         st.error(f"Prediction error: {str(e)}")
@@ -163,6 +175,7 @@ with tab1:
                 st.markdown("---")
                 st.header("Prediction Result")
                 
+                # Display only the final prediction
                 if prediction == 1:
                     st.error("🚨 **Heart Disease Detected**")
                 else:
@@ -195,7 +208,9 @@ with tab2:
             else:
                 if st.button("Run Batch Prediction", type="primary"):
                     with st.spinner("Processing batch predictions..."):
-                        predictions = model.predict(batch_data[required_columns])
+                        # Scale the batch data
+                        scaled_batch_data = scaler.transform(batch_data[required_columns])
+                        predictions = model.predict(scaled_batch_data)
                         
                         # Add predictions to dataframe
                         results_df = batch_data.copy()
@@ -233,9 +248,9 @@ with tab2:
 with st.sidebar:
     st.header("About")
     st.markdown("""
-    This Heart Disease Predictor uses a machine learning model trained on clinical data to assess the risk of heart disease.
+    This Heart Disease Predictor uses a **Logistic Regression** model trained on clinical data to assess the risk of heart disease.
     
-    **Features Used:**
+    **Model Features:**
     - Demographic information (Age, Sex)
     - Clinical measurements (BP, Cholesterol)
     - ECG results and exercise test data
@@ -246,20 +261,21 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("Model Information")
-    st.write(f"Model: Random Forest Classifier")
-    st.write(f"Location: `{model_path}`")
+    st.write(f"Model: **Logistic Regression**")
+    st.write(f"Model Location: `{model_path}`")
+    st.write(f"Scaler Location: `{scaler_path}`")
     
     if st.button("Check Model Status"):
-        if os.path.exists(model_path):
-            st.success("✅ Model loaded successfully")
+        if os.path.exists(model_path) and os.path.exists(scaler_path):
+            st.success("✅ Model and Scaler loaded successfully")
         else:
-            st.error("❌ Model file not found")
+            st.error("❌ Model or Scaler file not found")
 
 # Footer
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: gray;'>"
-    "Heart Disease Prediction System | For Educational Purposes"
+    "Heart Disease Prediction System | Logistic Regression Model | For Educational Purposes"
     "</div>", 
     unsafe_allow_html=True
 )
