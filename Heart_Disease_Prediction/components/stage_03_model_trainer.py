@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
@@ -99,20 +99,34 @@ class ModelTrainer:
             from Heart_Disease_Prediction.utils.util import read_yaml
             
             params = read_yaml(PARAM_FILE_PATH)
-            best_params = params['best_params']
+            # Updated to use logistic regression parameters
+            best_params = params.get('logistic_regression_params', {
+                'C': 1.0,
+                'max_iter': 1000,
+                'random_state': 42,
+                'solver': 'liblinear'
+            })
             
-            log.info(f"Loaded best parameters from param.yaml: {best_params}")
+            log.info(f"Loaded Logistic Regression parameters: {best_params}")
             return best_params
             
         except Exception as e:
             log.error(f"Error loading parameters from param.yaml: {str(e)}")
-            raise e
+            # Return default Logistic Regression parameters if loading fails
+            default_params = {
+                'C': 1.0,
+                'max_iter': 1000,
+                'random_state': 42,
+                'solver': 'liblinear'
+            }
+            log.info(f"Using default Logistic Regression parameters: {default_params}")
+            return default_params
     
     def cross_validate_model(self, X, y):
         """Perform cross-validation to check model stability"""
         try:
             best_params = self.load_best_params()
-            model = RandomForestClassifier(**best_params)
+            model = LogisticRegression(**best_params)
             
             cv_scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
             
@@ -131,21 +145,28 @@ class ModelTrainer:
             raise e
     
     def analyze_feature_importance(self, model, feature_names):
-        """Analyze which features might be causing overfitting"""
+        """Analyze which features are most important for Logistic Regression"""
         try:
-            importances = model.feature_importances_
+            # For Logistic Regression, use absolute coefficients as importance
+            if hasattr(model, 'coef_'):
+                importances = np.abs(model.coef_[0])
+            else:
+                # Fallback: use random feature importance
+                importances = np.ones(len(feature_names)) / len(feature_names)
+                log.warning("Using uniform feature importance - model coefficients not available")
+            
             feature_imp = pd.DataFrame({
                 'feature': feature_names,
                 'importance': importances
             }).sort_values('importance', ascending=False)
             
-            log.info("Top 5 Most Important Features:")
+            log.info("Top 5 Most Important Features (based on coefficients):")
             for _, row in feature_imp.head().iterrows():
                 log.info(f"  {row['feature']}: {row['importance']:.4f}")
             
             # Check for dominant features
             top_feature_importance = feature_imp['importance'].iloc[0]
-            if top_feature_importance > 0.3:
+            if top_feature_importance > (2 * feature_imp['importance'].iloc[1]):
                 log.warning(f"Single feature dominating (importance: {top_feature_importance:.4f}) - consider regularization")
             
             return feature_imp
@@ -154,21 +175,21 @@ class ModelTrainer:
             log.error(f"Error in feature importance analysis: {str(e)}")
             raise e
     
-    def train_random_forest(self, X_train, X_test, y_train, y_test):
-        """Train Random Forest using best parameters from param.yaml"""
+    def train_logistic_regression(self, X_train, X_test, y_train, y_test):
+        """Train Logistic Regression using best parameters from param.yaml"""
         try:
-            log.info("Starting Random Forest training with parameters from param.yaml...")
+            log.info("Starting Logistic Regression training...")
             
             # Load best parameters from param.yaml
             best_params = self.load_best_params()
             
-            # Create and train model with best parameters
-            rfctree = RandomForestClassifier(**best_params)
-            rfctree.fit(X_train, y_train)
+            # Create and train Logistic Regression model
+            logreg = LogisticRegression(**best_params)
+            logreg.fit(X_train, y_train)
 
             # Make predictions on both train and test sets
-            train_pred = rfctree.predict(X_train)
-            test_pred = rfctree.predict(X_test)
+            train_pred = logreg.predict(X_train)
+            test_pred = logreg.predict(X_test)
             
             # Calculate accuracies for both sets
             train_accuracy = accuracy_score(y_train, train_pred)
@@ -180,7 +201,7 @@ class ModelTrainer:
             log.info(f"Test Accuracy: {test_accuracy:.4f}")
             log.info(f"Accuracy Gap (Train - Test): {accuracy_gap:.4f}")
             
-            # Overfitting detection (without emojis for file compatibility)
+            # Overfitting detection
             overfitting_status = ""
             overfitting_log_status = ""
             
@@ -207,10 +228,16 @@ class ModelTrainer:
             cm = confusion_matrix(y_test, test_pred)
             log.info(f"Confusion Matrix:\n{cm}")
             
-            return rfctree, best_params, test_accuracy, train_accuracy, class_report, cm, accuracy_gap, overfitting_status
+            # Also get prediction probabilities for potential threshold tuning
+            train_proba = logreg.predict_proba(X_train)
+            test_proba = logreg.predict_proba(X_test)
+            
+            log.info("Logistic Regression training completed successfully")
+            
+            return logreg, best_params, test_accuracy, train_accuracy, class_report, cm, accuracy_gap, overfitting_status
             
         except Exception as e:
-            log.error(f"Error in Random Forest training: {str(e)}")
+            log.error(f"Error in Logistic Regression training: {str(e)}")
             raise e
     
     def save_model_and_results(self, model, best_params, test_accuracy, train_accuracy, 
@@ -242,10 +269,10 @@ class ModelTrainer:
             results_path = self.config.tested_data_dir / "evaluation_results.joblib"
             joblib.dump(results, results_path)
             
-            # Save a comprehensive text report (without emojis for Windows compatibility)
+            # Save a comprehensive text report
             report_path = self.config.tested_data_dir / "model_report.txt"
             with open(report_path, 'w', encoding='utf-8') as f:
-                f.write("=== MODEL TRAINING RESULTS ===\n\n")
+                f.write("=== LOGISTIC REGRESSION TRAINING RESULTS ===\n\n")
                 f.write(f"Training Accuracy: {train_accuracy:.4f}\n")
                 f.write(f"Test Accuracy: {test_accuracy:.4f}\n")
                 f.write(f"Accuracy Gap: {accuracy_gap:.4f}\n")
@@ -255,7 +282,7 @@ class ModelTrainer:
                 f.write(f"CV Scores: {list(cv_scores)}\n")
                 f.write(f"CV Mean: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})\n\n")
                 
-                f.write("=== TOP 5 FEATURE IMPORTANCES ===\n")
+                f.write("=== TOP 5 FEATURE IMPORTANCES (Absolute Coefficients) ===\n")
                 top_features = feature_imp.head()
                 for _, row in top_features.iterrows():
                     f.write(f"{row['feature']}: {row['importance']:.4f}\n")
@@ -286,7 +313,7 @@ class ModelTrainer:
     def train_model(self):
         """Main method to execute the complete model training pipeline"""
         try:
-            log.info("Starting model training pipeline...")
+            log.info("Starting Logistic Regression model training pipeline...")
             
             # Step 1: Load and split data
             X_train, X_test, y_train, y_test = self.load_and_split_data()
@@ -297,8 +324,8 @@ class ModelTrainer:
                 pd.concat([y_train, y_test])
             )
             
-            # Step 3: Train Random Forest
-            model, best_params, test_accuracy, train_accuracy, class_report, cm, accuracy_gap, overfitting_status = self.train_random_forest(
+            # Step 3: Train Logistic Regression
+            model, best_params, test_accuracy, train_accuracy, class_report, cm, accuracy_gap, overfitting_status = self.train_logistic_regression(
                 X_train, X_test, y_train, y_test
             )
             
@@ -311,10 +338,10 @@ class ModelTrainer:
                 class_report, cm, accuracy_gap, overfitting_status, cv_scores, feature_imp
             )
             
-            log.info("Model training pipeline completed successfully!")
+            log.info("Logistic Regression model training pipeline completed successfully!")
             
             return model
             
         except Exception as e:
-            log.error(f"Model training pipeline failed: {str(e)}")
+            log.error(f"Logistic Regression model training pipeline failed: {str(e)}")
             raise e

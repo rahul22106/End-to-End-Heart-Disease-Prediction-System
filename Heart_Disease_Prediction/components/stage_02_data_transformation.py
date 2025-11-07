@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler  # ADD THIS IMPORT
+import joblib  # ADD THIS IMPORT
 from Heart_Disease_Prediction.entity.config_entity import DataTransformationConfig
 from Heart_Disease_Prediction.logger.log import log
 
@@ -64,6 +66,38 @@ class DataTransformation:
         log.info("Categorical encoding completed")
         return encoding_map
     
+    def scale_features(self):  # NEW METHOD
+        """Apply StandardScaler to all features except target"""
+        if self.heart is None:
+            raise ValueError("No data loaded. Please load data first.")
+        
+        log.info("=== Applying StandardScaler ===")
+        
+        # Separate features and target
+        features = self.heart.drop('HeartDisease', axis=1)
+        target = self.heart['HeartDisease']
+        
+        # Get feature names for reconstruction
+        feature_names = features.columns.tolist()
+        
+        # Apply StandardScaler
+        scaler = StandardScaler()
+        scaled_features = scaler.fit_transform(features)
+        
+        # Convert back to DataFrame with original column names
+        scaled_df = pd.DataFrame(scaled_features, columns=feature_names)
+        
+        # Recombine with target
+        self.heart = pd.concat([scaled_df, target], axis=1)
+        
+        # Save the scaler for future use
+        scaler_path = os.path.join(self.config.root_dir, "standard_scaler.joblib")
+        joblib.dump(scaler, scaler_path)
+        log.info(f"StandardScaler saved to: {scaler_path}")
+        
+        log.info("Feature scaling completed successfully")
+        return scaler
+    
     def handle_zero_values(self):
         """Handle zero values in Cholesterol and RestingBP columns"""
         if self.heart is None:
@@ -102,12 +136,17 @@ class DataTransformation:
         
         log.info("=== Optimizing Data Types ===")
         
-        # Convert all columns except Oldpeak to int32
-        if 'Oldpeak' in self.heart.columns:
-            cols_to_convert = self.heart.columns.drop('Oldpeak')
-            self.heart[cols_to_convert] = self.heart[cols_to_convert].astype('int32')
+        # Convert features to float32 (scaled values) and target to int32
+        features = self.heart.drop('HeartDisease', axis=1)
+        target = self.heart['HeartDisease']
         
-        log.info("Data types optimized successfully")
+        # Convert features to float32 for scaled values
+        features = features.astype('float32')
+        target = target.astype('int32')
+        
+        self.heart = pd.concat([features, target], axis=1)
+        
+        log.info("Data types optimized: features to float32, target to int32")
     
     def save_transformed_data(self):
         """Save the transformed dataset"""
@@ -144,10 +183,13 @@ class DataTransformation:
             # Step 4: Handle zero values
             self.handle_zero_values()
             
-            # Step 5: Optimize data types
+            # Step 5: Scale features (NEW STEP - ADDED HERE)
+            self.scale_features()
+            
+            # Step 6: Optimize data types
             self.optimize_data_types()
             
-            # Step 6: Save transformed data
+            # Step 7: Save transformed data
             output_path = self.save_transformed_data()
             
             log.info("Data transformation pipeline completed successfully")
