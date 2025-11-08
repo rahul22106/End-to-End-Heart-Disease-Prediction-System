@@ -1,31 +1,31 @@
 === LOGISTIC REGRESSION TRAINING RESULTS ===
 
-Training Accuracy: 0.8542
-Test Accuracy: 0.8641
-Accuracy Gap: -0.0099
+Training Accuracy: 0.8631
+Test Accuracy: 0.8764
+Accuracy Gap: -0.0132
 Overfitting Status: Good generalization - minimal overfitting
 
 === CROSS-VALIDATION RESULTS ===
-CV Scores: [np.float64(0.8532608695652174), np.float64(0.8858695652173914), np.float64(0.8369565217391305), np.float64(0.8142076502732241), np.float64(0.8633879781420765)]
-CV Mean: 0.8507 (+/- 0.0484)
+CV Scores: [np.float64(0.8676789587852495), np.float64(0.824295010845987), np.float64(0.8456521739130435), np.float64(0.8739130434782608), np.float64(0.8760869565217392)]
+CV Mean: 0.8575 (+/- 0.0396)
 
 === TOP 5 FEATURE IMPORTANCES (Absolute Coefficients) ===
-ST_Slope: 1.0616
-ChestPainType: 0.5861
-ExerciseAngina: 0.5831
-Sex: 0.4965
-FastingBS: 0.4572
+ST_Slope: 1.0098
+ChestPainType: 0.6322
+Sex: 0.5935
+FastingBS: 0.5698
+ExerciseAngina: 0.5261
 
 === CLASSIFICATION REPORT ===
               precision    recall  f1-score   support
 
-           0       0.87      0.82      0.84        82
-           1       0.86      0.90      0.88       102
+           0       0.89      0.84      0.86       213
+           1       0.87      0.91      0.89       248
 
-    accuracy                           0.86       184
-   macro avg       0.86      0.86      0.86       184
-weighted avg       0.86      0.86      0.86       184
+    accuracy                           0.88       461
+   macro avg       0.88      0.87      0.88       461
+weighted avg       0.88      0.88      0.88       461
 
 === CONFUSION MATRIX ===
-[[67 15]
- [10 92]]
+[[179  34]
+ [ 23 225]]
