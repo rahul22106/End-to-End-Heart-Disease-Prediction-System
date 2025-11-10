@@ -1,20 +1,38 @@
-FROM python:3.9-slim-bullseye
+# # Use the official Python image from a different tag
+# FROM python:3.9
 
-EXPOSE 8501
+# WORKDIR /app
+
+# # Copy requirements and install dependencies
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir -r requirements.txt
+
+# # Copy app
+# COPY . .
+
+# EXPOSE 8501
+
+# ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+
+
+FROM python:3.9-slim
 
 RUN apt-get update && apt-get install -y \
     build-essential \
-    gcc \
-    g++ \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 WORKDIR /app
 
-# Copy ALL files first
-COPY . /app
+# Copy requirements first
+COPY requirements.txt .
 
-# Then install requirements (now setup.py is available)
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy ALL files including artifacts
+COPY . .
+
+EXPOSE 8501
 
 ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

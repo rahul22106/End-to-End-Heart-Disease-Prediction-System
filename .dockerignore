@@ -16,7 +16,6 @@ pip-delete-this-directory.txt
 nosetests.xml
 coverage.xml
 *.cover
-*.log
 
 # IDE
 .vscode/
@@ -33,41 +32,58 @@ coverage.xml
 ehthumbs.db
 Thumbs.db
 
-# Git
+# Git (keep .git excluded but NOT .gitignore)
 .git/
-.gitignore
 
-
-# Documentation
+# Documentation (but keep README.md for setup.py)
 docs/
-*.md
 
 # Testing
 .pytest_cache/
 .mypy_cache/
+tests/
 
-# Logs
-logs/
-*.log
+# Logs (exclude log files but keep logs/ directory structure)
+logs/*.log
 
 # Temporary files
 temp/
 tmp/
 
-# Large data files (if any)
+# Large data files - but KEEP artifacts/ directory
+# The model files in artifacts/ are needed!
 data/
-*.csv
-*.xlsx
-*.json
 
-# Exclude the original heart.csv and other raw data files if they exist
+# Exclude raw data files if they exist in root
 heart.csv
 test.csv
 train.csv
 
-
-# Docker
-Dockerfile
+# Docker files (no need to copy these into the image)
 .dockerignore
 docker-compose.yml
 docker-compose.yaml
+
+# CI/CD files (not needed in container)
+.github/
+
+# Deployment config (not needed in container)
+render.yaml
+
+# Development files
+*.ipynb
+.pytest_cache/
+htmlcov/
+
+# Environment files
+.env
+.env.*
+
+# Keep these files/folders:
+# - README.md (needed by setup.py)
+# - setup.py (needed for -e . installation)
+# - requirements.txt (needed for pip install)
+# - artifacts/ (needed for trained model)
+# - config/ (needed for app configuration)
+# - schema.yaml (needed for data validation)
+# - param.yaml (needed for model parameters)

@@ -49,3 +49,35 @@ open up you local host and port
 ```
 
 
+## 🐳 Docker Deployment
+
+### Quick Start with Docker
+
+1. **Build the image:**
+```bash
+   docker build -t heart-disease-app .
+```
+
+2. **Run the container:**
+```bash
+   docker run -d -p 8501:8501 --name heart-app heart-disease-app
+```
+
+3. **Access the application:**
+    Open http://localhost:8501 in your browser
+
+### Docker Commands
+
+```bash
+# View running container
+docker ps
+
+# View logs
+docker logs heart-app
+
+# Stop container
+docker stop heart-app
+
+# Remove container
+docker rm heart-app
+```
