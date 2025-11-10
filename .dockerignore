@@ -36,7 +36,7 @@ Thumbs.db
 # Git
 .git/
 .gitignore
-README.md
+
 
 # Documentation
 docs/
@@ -65,14 +65,6 @@ heart.csv
 test.csv
 train.csv
 
-# Keep only the necessary model files
-# We want to keep artifacts/model_trainer/trained_model/heart_disease_model.joblib
-# but exclude any other unnecessary files in artifacts
-artifacts/data_ingestion/
-artifacts/data_validation/
-artifacts/data_transformation/
-artifacts/model_trainer/test_results/
-artifacts/model_trainer/data/
 
 # Docker
 Dockerfile
