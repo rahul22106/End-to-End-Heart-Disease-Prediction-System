@@ -1,0 +1,100 @@
+services:
+  # Web Service - Streamlit App
+  - type: web
+    name: end-to-end-heart-disease-prediction
+    env: docker
+    region: oregon # Change to your preferred region: oregon, frankfurt, singapore, ohio
+    plan: free # Options: free, starter, standard, pro
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    
+    # Health check configuration
+    healthCheckPath: /
+    
+    # Environment variables
+    envVars:
+      - key: PORT
+        value: 8501
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: STREAMLIT_SERVER_PORT
+        value: 8501
+      - key: STREAMLIT_SERVER_ADDRESS
+        value: 0.0.0.0
+      - key: STREAMLIT_SERVER_HEADLESS
+        value: true
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: false
+      - key: STREAMLIT_SERVER_ENABLE_CORS
+        value: false
+      - key: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
+        value: false
+    
+    # Auto-deploy configuration
+    autoDeploy: true
+    
+    # Branch to deploy from
+    branch: main
+    
+    # Build settings (not needed for Docker but kept for reference)
+    # Docker builds are handled by the Dockerfile itself
+    
+    # Resource allocation (for paid plans)
+    # Uncomment and adjust if you upgrade to a paid plan
+    # disk:
+    #   name: heart-disease-data
+    #   mountPath: /data
+    #   sizeGB: 1
+    
+    # numInstances: 1  # Number of instances (paid plans)
+
+# Optional: Background Worker (if needed for data processing)
+# Uncomment if you need background tasks
+# - type: worker
+#   name: heart-disease-worker
+#   env: docker
+#   region: oregon
+#   plan: free
+#   dockerfilePath: ./Dockerfile
+#   dockerContext: .
+#   envVars:
+#     - key: WORKER_MODE
+#       value: true
+#     - key: PYTHONUNBUFFERED
+#       value: 1
+#   branch: main
+#   autoDeploy: true
+
+# Optional: Cron Job (for scheduled model retraining or data updates)
+# Uncomment if you need scheduled tasks
+# - type: cron
+#   name: heart-disease-model-retrain
+#   env: docker
+#   region: oregon
+#   schedule: "0 2 * * 0"  # Weekly on Sunday at 2 AM UTC
+#   dockerfilePath: ./Dockerfile
+#   dockerContext: .
+#   envVars:
+#     - key: CRON_MODE
+#       value: true
+#     - key: PYTHONUNBUFFERED
+#       value: 1
+#   branch: main
+
+# Optional: Database (PostgreSQL) - if you want to store predictions or user data
+# Uncomment if you need a database in the future
+# databases:
+#   - name: heart-disease-db
+#     databaseName: heartdisease
+#     user: heartdisease_user
+#     region: oregon
+#     plan: free  # Free tier: 90-day expiration, 256 MB RAM
+#     # plan: starter  # Paid: $7/month, 512 MB RAM
+
+# Optional: Redis (for caching) - if you want to cache predictions
+# Uncomment if you need Redis for caching
+# - type: redis
+#   name: heart-disease-cache
+#   region: oregon
+#   plan: free  # Free tier: 25 MB
+#   maxmemoryPolicy: allkeys-lru
