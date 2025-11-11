@@ -261,7 +261,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("Model Information")
-    st.write(f"Model: **Logistic Reg*")
+    st.write(f"Model: **Logistic Regression*")
     st.write(f"Model Location: `{model_path}`")
     st.write(f"Scaler Location: `{scaler_path}`")
     
